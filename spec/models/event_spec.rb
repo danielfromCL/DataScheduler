@@ -26,4 +26,16 @@ RSpec.describe Event, type: :model do
     end.to raise_error ActiveRecord::RecordInvalid
     expect(Event.count).to eq 0
   end
+
+  it 'can have many users associated through event participants' do
+    user_1 = FactoryBot.create(:user)
+    user_2 = FactoryBot.create(:user)
+    event = FactoryBot.create(:event)
+    participant_1 = EventParticipant.create!(user: user_1, event:, role: 'creator', status: 'accepted')
+    expect(event.users.count).to eq(1)
+    expect(event.users.first).to eq(user_1)
+    participant_2 = EventParticipant.create!(user: user_2, event:, role: 'participant', status: 'pending')
+    expect(event.users.count).to eq(2)
+    expect(event.users).to eq(User.where(id: [user_1.id, user_2.id]))
+  end
 end

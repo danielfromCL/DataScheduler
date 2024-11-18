@@ -56,4 +56,16 @@ RSpec.describe User, type: :model do
       end.to raise_error ArgumentError
     end
   end
+
+  it 'can have many events associated through event participants' do
+    user = FactoryBot.create(:user)
+    event_1 = FactoryBot.create(:event)
+    event_2 = FactoryBot.create(:event)
+    participant_1 = EventParticipant.create!(user:, event: event_1, role: 'creator', status: 'accepted')
+    expect(user.events.count).to eq(1)
+    expect(user.events.first).to eq(event_1)
+    participant_2 = EventParticipant.create!(user:, event: event_2, role: 'participant', status: 'pending')
+    expect(user.events.count).to eq(2)
+    expect(user.events).to eq(Event.where(id: [event_1.id, event_2.id]))
+  end
 end
