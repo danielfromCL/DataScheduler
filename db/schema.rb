@@ -10,12 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_11_18_161931) do
+ActiveRecord::Schema[7.0].define(version: 2024_11_18_195642) do
   create_table "companies", force: :cascade do |t|
     t.string "name"
     t.string "identifier", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["identifier"], name: "index_companies_on_identifier", unique: true
   end
 
   create_table "event_participants", force: :cascade do |t|
@@ -52,6 +53,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_18_161931) do
     t.datetime "updated_at", null: false
     t.integer "company_id"
     t.index ["company_id"], name: "index_users_on_company_id"
+    t.index ["identifier"], name: "index_users_on_identifier", unique: true
   end
 
   add_foreign_key "event_participants", "events"
