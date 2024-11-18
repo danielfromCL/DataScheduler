@@ -13,7 +13,7 @@ RSpec.describe User, type: :model do
     expect(User.count).to eq 0
     expect do
       User.create!(name: 'test')
-    end.to raise_error ActiveRecord::NotNullViolation
+    end.to raise_error ActiveRecord::RecordInvalid
     expect(User.count).to eq 0
   end
 
@@ -34,7 +34,7 @@ RSpec.describe User, type: :model do
 
     it 'creates a member user' do
       expect do
-        User.create(name: 'test', email: 'a@a.com', company:, role: 'member')
+        User.create!(name: 'test', identifier: '19', email: 'a@a.com', company:, role: 'member')
       end.not_to raise_error
       expect(company.users.count).to eq 1
       expect(company.users.first.email).to eq('a@a.com')
@@ -43,7 +43,7 @@ RSpec.describe User, type: :model do
 
     it 'creates an owner user' do
       expect do
-        User.create(name: 'test', email: 'a@a.com', company:, role: 'owner')
+        User.create!(name: 'test', identifier: '19', email: 'a@a.com', company:, role: 'owner')
       end.not_to raise_error
       expect(company.users.count).to eq 1
       expect(company.users.first.email).to eq('a@a.com')
@@ -52,8 +52,8 @@ RSpec.describe User, type: :model do
 
     it 'fails if role non-existent' do
       expect do
-        User.create(name: 'test', email: 'a@a.com', company:, role: 'not_a_role')
-      end.to raise_error
+        User.create!(name: 'test', identifier: '19', email: 'a@a.com', company:, role: 'not_a_role')
+      end.to raise_error ArgumentError
     end
   end
 end

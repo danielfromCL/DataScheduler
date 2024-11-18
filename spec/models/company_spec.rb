@@ -13,7 +13,7 @@ RSpec.describe Company, type: :model do
     expect(Company.count).to eq 0
     expect do
       Company.create!(name: 'test')
-    end.to raise_error ActiveRecord::NotNullViolation
+    end.to raise_error ActiveRecord::RecordInvalid
     expect(Company.count).to eq 0
   end
 
