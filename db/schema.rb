@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_11_18_160204) do
+ActiveRecord::Schema[7.0].define(version: 2024_11_18_161931) do
   create_table "companies", force: :cascade do |t|
     t.string "name"
     t.string "identifier", null: false
@@ -19,12 +19,15 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_18_160204) do
   end
 
   create_table "event_participants", force: :cascade do |t|
-    t.string "user_id", null: false
-    t.string "event_id", null: false
     t.string "status"
     t.string "role"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.integer "event_id", null: false
+    t.index ["event_id"], name: "index_event_participants_on_event_id"
+    t.index ["user_id", "event_id"], name: "index_event_participants_on_user_id_and_event_id", unique: true
+    t.index ["user_id"], name: "index_event_participants_on_user_id"
   end
 
   create_table "events", force: :cascade do |t|
@@ -33,6 +36,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_18_160204) do
     t.string "city"
     t.string "state"
     t.string "country"
+    t.string "url"
     t.datetime "from_date"
     t.datetime "to_date"
     t.datetime "created_at", null: false
@@ -42,10 +46,15 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_18_160204) do
   create_table "users", force: :cascade do |t|
     t.string "name"
     t.string "identifier", null: false
-    t.string "company_id"
     t.string "email"
+    t.string "role"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "company_id"
+    t.index ["company_id"], name: "index_users_on_company_id"
   end
 
+  add_foreign_key "event_participants", "events"
+  add_foreign_key "event_participants", "users"
+  add_foreign_key "users", "companies"
 end
