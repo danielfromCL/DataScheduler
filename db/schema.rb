@@ -33,13 +33,13 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_18_195642) do
 
   create_table "events", force: :cascade do |t|
     t.string "name"
-    t.boolean "online"
+    t.boolean "online", default: true
     t.string "city"
     t.string "state"
     t.string "country"
     t.string "url"
-    t.datetime "from_date"
-    t.datetime "to_date"
+    t.datetime "from_date", null: false
+    t.datetime "to_date", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
