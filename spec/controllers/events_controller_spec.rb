@@ -1,3 +1,5 @@
+require 'rails_helper'
+
 RSpec.describe EventsController do
   describe "GET" do
     it "" do

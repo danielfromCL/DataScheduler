@@ -1,4 +1,6 @@
-RSpec.describe CompaniesController do
+require 'rails_helper'
+
+RSpec.describe CompaniesController, type: :controller do
   describe "GET" do
     it "" do
     end
