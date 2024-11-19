@@ -129,6 +129,23 @@ RSpec.describe EventsController, type: :controller do
       expect(body[1]['event_participants'][0]['id']).to eq(participant_1.id)
       expect(body[2]['event_participants'][0]['id']).to eq(participant_2.id)
     end
+
+    it 'shows scheduling conflicts' do
+      event_1 = FactoryBot.create(:event, from_date: DateTime.parse('2024-11-18T13:00:00-03'), to_date: DateTime.parse('2024-11-18T14:00:00-03'))
+      event_2 = FactoryBot.create(:event, from_date: DateTime.parse('2024-11-18T11:00:00-03'), to_date: DateTime.parse('2024-11-18T15:00:00-03'))
+      FactoryBot.create(:event_participant, event: event_1, user: member)
+      FactoryBot.create(:event_participant, event: event_2, user: member)
+      request.headers['Authorization'] = authenticate(owner)
+      get :index,
+          params: {
+            user_id: member.id
+          }
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body.length).to eq(2)
+      expect(body[0]['event_participants'][0]['schedule_conflicts']).to eq([event_1.as_json])
+      expect(body[1]['event_participants'][0]['schedule_conflicts']).to eq([event_2.as_json])
+    end
   end
   describe 'POST' do
     it 'owner can create events for members' do
