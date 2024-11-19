@@ -92,3 +92,7 @@ RSpec.configure do |config|
   Kernel.srand config.seed
 =end
 end
+
+def authenticate(user)
+  "Token #{user.id}"
+end
