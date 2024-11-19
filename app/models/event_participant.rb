@@ -10,4 +10,8 @@ class EventParticipant < ApplicationRecord
     creator: 'creator',
     participant: 'participant'
   }, default: :participant
+
+  def schedule_conflicts
+    user.events.where('events.to_date >= ? AND events.from_date <= ?', event.from_date, event.to_date).where.not(id: event.id)
+  end
 end
