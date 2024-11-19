@@ -15,7 +15,7 @@ RSpec.describe CompaniesController, type: :controller do
           }
       expect(response).to have_http_status(:ok)
       body = JSON.parse(response.body)
-      expect(body).to eq(company.to_json)
+      expect(body).to eq(company.as_json)
 
       request.headers['authorization'] = authenticate(owner)
       get :show,
@@ -24,7 +24,7 @@ RSpec.describe CompaniesController, type: :controller do
           }
       expect(response).to have_http_status(:ok)
       body = JSON.parse(response.body)
-      expect(body).to eq(company.to_json)
+      expect(body).to eq(company.as_json)
     end
 
     it 'does not show a company if not owner or member' do
