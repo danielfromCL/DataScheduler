@@ -19,6 +19,15 @@ RSpec.describe UsersController do
       expect(body.length).to eq(3)
       expect(body.map { |m| m['id']}).to match_array([owner.id, member_1.id, member_2.id])
     end
+
+    it 'does not list users if not company member' do
+      request.headers['Authorization'] = authenticate(outsider)
+      get :index,
+          params: {
+            company_id: company.id
+          }
+      expect(response).to have_http_status(:forbidden)
+    end
   end
   describe 'POST' do
 
