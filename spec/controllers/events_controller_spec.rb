@@ -95,6 +95,7 @@ RSpec.describe EventsController, type: :controller do
       participant_2 = FactoryBot.create(:event_participant, event: event_2, user: member)
       participant_3 = FactoryBot.create(:event_participant, event: event_3, user: member)
       participant_4 = FactoryBot.create(:event_participant, event: event_4, user: owner)
+      participant_5 = FactoryBot.create(:event_participant, event: event_3, user: owner, status: 'accepted', role: 'creator')
       request.headers['Authorization'] = authenticate(owner)
       get :index,
           params: {
@@ -121,6 +122,12 @@ RSpec.describe EventsController, type: :controller do
       expect(body[0]['country']).to be_nil
       expect(body[1]['country']).to be_nil
       expect(body[2]['country']).to eq('CL')
+      expect(body[0]['event_participants'].length).to eq(2) # This should have both the owner and the member
+      expect(body[1]['event_participants'].length).to eq(1)
+      expect(body[2]['event_participants'].length).to eq(1)
+      expect(body[0]['event_participants'].map { |ep| ep['id']} ).to match_array([participant_3.id, participant_5.id])
+      expect(body[1]['event_participants'][0]['id']).to eq(participant_1.id)
+      expect(body[2]['event_participants'][0]['id']).to eq(participant_2.id)
     end
   end
   describe 'POST' do
