@@ -7,6 +7,9 @@ class EventsController < ApplicationController
 
   def create
     @event = Event.create!(**create_params)
+    user = get_user
+    EventParticipant.create!(user: @user, event: @event, role: 'creator')
+    EventParticipant.create!(user:, event: @event) if user != @user
     render json: @event, status: :created
   end
 
