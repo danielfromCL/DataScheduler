@@ -37,7 +37,7 @@ RSpec.describe UsersController do
           }
       expect(response).to have_http_status(:ok)
       body = JSON.parse(response.body)
-      expect(body).to eq(member_1.to_json)
+      expect(body).to eq(member_1.as_json)
     end
 
     it 'shows a member if owner' do
@@ -48,7 +48,7 @@ RSpec.describe UsersController do
           }
       expect(response).to have_http_status(:ok)
       body = JSON.parse(response.body)
-      expect(body).to eq(member_1.to_json)
+      expect(body).to eq(member_1.as_json)
     end
 
     it 'does not show user if not from company' do
