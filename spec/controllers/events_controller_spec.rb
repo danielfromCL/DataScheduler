@@ -6,6 +6,14 @@ RSpec.describe EventsController, type: :controller do
   let!(:member) { FactoryBot.create(:user, company:) }
   let!(:user) { FactoryBot.create(:user) }
   let!(:generic_stub) { stub_request(:post, "https://api.sendgrid.com/v3/mail/send") }
+  let!(:location_stub) {
+    stub_request(:get, "http://api.openweathermap.org/geo/1.0/direct?q=Santiago,CL&limit=1&appid=")
+      .to_return(status: 200, body: { name: 'Santiago', lat: '12.123', lon: '13.321', country: 'CL' }.to_json, headers: {})
+  }
+  let!(:weather_stub) {
+    stub_request(:get, "https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=12.123&lon=13.321&dt=#{Date.today.to_time.to_i}&units=metric&appid=")
+      .to_return(status: 200, body: { data: [{ temp: '23', weather: [{ main: 'Clear', description: 'Clear sky' }] }] }.to_json, headers: {})
+  }
   describe "GET" do
     it "lists own events in chronological order" do
       event_1 = FactoryBot.create(:event, from_date: Date.yesterday)
@@ -42,6 +50,13 @@ RSpec.describe EventsController, type: :controller do
       expect(resp[0]['country']).to be_nil
       expect(resp[1]['country']).to be_nil
       expect(resp[2]['country']).to eq('CL')
+      expect(resp[0]['weather']).to be_nil
+      expect(resp[1]['weather']).to be_nil
+      expect(resp[2]['weather']).to eq({
+                                         'main' => 'Clear',
+                                         'description' => 'Clear sky',
+                                         'temperature' => '23'
+                                       })
     end
 
     it 'lists own events if no user_id provided' do
