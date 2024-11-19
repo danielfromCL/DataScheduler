@@ -1,6 +1,6 @@
 class OpenWeatherAPI
   def initialize
-    @api_key = ENV['SENDGRID_API_KEY']
+    @api_key = ENV['OPENWEATHER_API_KEY']
   end
 
   def get_weather(city, state, country, from)
