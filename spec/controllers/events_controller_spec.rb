@@ -27,6 +27,9 @@ RSpec.describe EventsController, type: :controller do
       expect(resp[0]['id']).to eq(event_3.id)
       expect(resp[1]['id']).to eq(event_1.id)
       expect(resp[2]['id']).to eq(event_2.id)
+      expect(DateTime.parse(resp[0]['from_date'])).to eq(event_3.from_date)
+      expect(DateTime.parse(resp[1]['from_date'])).to eq(event_1.from_date)
+      expect(DateTime.parse(resp[2]['from_date'])).to eq(event_2.from_date)
     end
 
     it 'lists own events if no user_id provided' do
@@ -46,6 +49,18 @@ RSpec.describe EventsController, type: :controller do
       expect(resp[0]['id']).to eq(event_3.id)
       expect(resp[1]['id']).to eq(event_1.id)
       expect(resp[2]['id']).to eq(event_2.id)
+      expect(DateTime.parse(resp[0]['from_date'])).to eq(event_3.from_date)
+      expect(DateTime.parse(resp[1]['from_date'])).to eq(event_1.from_date)
+      expect(DateTime.parse(resp[2]['from_date'])).to eq(event_2.from_date)
+    end
+
+    it 'does not returns a list if no authentication provided' do
+      event_1 = FactoryBot.create(:event, from_date: Date.yesterday)
+      event_4 = FactoryBot.create(:event, from_date: Date.yesterday)
+      participant_1 = FactoryBot.create(:event_participant, event: event_1, user:)
+      participant_4 = FactoryBot.create(:event_participant, event: event_4, user: owner)
+      get :index
+      expect(response).to have_http_status(:unauthorized)
     end
   end
   describe 'POST' do
