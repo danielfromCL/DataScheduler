@@ -9,6 +9,7 @@ class User < ApplicationRecord
   }
 
   def events_ordered_by_from_date
-    events.order('events.from_date ASC')
+    # Eager loading the participants
+    events.includes(:event_participants).order('events.from_date ASC')
   end
 end

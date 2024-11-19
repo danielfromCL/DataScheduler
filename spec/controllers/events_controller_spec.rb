@@ -85,6 +85,50 @@ RSpec.describe EventsController, type: :controller do
       get :index
       expect(response).to have_http_status(:unauthorized)
     end
+
+    it 'lists workers events if owner' do
+      event_1 = FactoryBot.create(:event, from_date: Date.yesterday)
+      event_2 = FactoryBot.create(:event, from_date: Date.today, online: false, city: 'Santiago', country: 'CL')
+      event_3 = FactoryBot.create(:event, from_date: Date.yesterday - 1, to_date: Date.yesterday)
+      event_4 = FactoryBot.create(:event, from_date: Date.yesterday)
+      participant_1 = FactoryBot.create(:event_participant, event: event_1, user: member)
+      participant_2 = FactoryBot.create(:event_participant, event: event_2, user: member)
+      participant_3 = FactoryBot.create(:event_participant, event: event_3, user: member)
+      participant_4 = FactoryBot.create(:event_participant, event: event_4, user: owner)
+      participant_5 = FactoryBot.create(:event_participant, event: event_3, user: owner, status: 'accepted', role: 'creator')
+      request.headers['Authorization'] = authenticate(owner)
+      get :index,
+          params: {
+            user_id: member
+          }
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body.length).to eq(3)
+      expect(body[0]['id']).to eq(event_3.id)
+      expect(body[1]['id']).to eq(event_1.id)
+      expect(body[2]['id']).to eq(event_2.id)
+      expect(DateTime.parse(body[0]['from_date'])).to eq(event_3.from_date)
+      expect(DateTime.parse(body[1]['from_date'])).to eq(event_1.from_date)
+      expect(DateTime.parse(body[2]['from_date'])).to eq(event_2.from_date)
+      expect(body[0]['online']).to eq(true)
+      expect(body[1]['online']).to eq(true)
+      expect(body[2]['online']).to eq(false)
+      expect(body[0]['city']).to be_nil
+      expect(body[1]['city']).to be_nil
+      expect(body[2]['city']).to eq('Santiago')
+      expect(body[0]['state']).to be_nil
+      expect(body[1]['state']).to be_nil
+      expect(body[2]['state']).to be_nil
+      expect(body[0]['country']).to be_nil
+      expect(body[1]['country']).to be_nil
+      expect(body[2]['country']).to eq('CL')
+      expect(body[0]['event_participants'].length).to eq(2) # This should have both the owner and the member
+      expect(body[1]['event_participants'].length).to eq(1)
+      expect(body[2]['event_participants'].length).to eq(1)
+      expect(body[0]['event_participants'].map { |ep| ep['id']} ).to match_array([participant_3.id, participant_5.id])
+      expect(body[1]['event_participants'][0]['id']).to eq(participant_1.id)
+      expect(body[2]['event_participants'][0]['id']).to eq(participant_2.id)
+    end
   end
   describe 'POST' do
     it 'owner can create events for members' do
