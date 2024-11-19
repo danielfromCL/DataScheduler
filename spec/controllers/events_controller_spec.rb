@@ -6,18 +6,19 @@ RSpec.describe EventsController, type: :controller do
   let!(:member) { FactoryBot.create(:user, company:) }
   let!(:user) { FactoryBot.create(:user) }
   let!(:generic_stub) { stub_request(:post, "https://api.sendgrid.com/v3/mail/send") }
+  let!(:from_date) { Date.today }
   let!(:location_stub) {
     stub_request(:get, "http://api.openweathermap.org/geo/1.0/direct?q=Santiago,CL&limit=1&appid=")
       .to_return(status: 200, body: { name: 'Santiago', lat: '12.123', lon: '13.321', country: 'CL' }.to_json, headers: {})
   }
   let!(:weather_stub) {
-    stub_request(:get, "https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=12.123&lon=13.321&dt=#{Date.today.to_time.to_i}&units=metric&appid=")
+    stub_request(:get, /https:\/\/api.openweathermap.org\/data\/3.0\/onecall\/timemachine\?appid=&dt=\d*&lat=12.123&lon=13.321&units=metric/)
       .to_return(status: 200, body: { data: [{ temp: '23', weather: [{ main: 'Clear', description: 'Clear sky' }] }] }.to_json, headers: {})
   }
   describe "GET" do
     it "lists own events in chronological order" do
       event_1 = FactoryBot.create(:event, from_date: Date.yesterday)
-      event_2 = FactoryBot.create(:event, from_date: Date.today, online: false, city: 'Santiago', country: 'CL')
+      event_2 = FactoryBot.create(:event, from_date:, online: false, city: 'Santiago', country: 'CL')
       event_3 = FactoryBot.create(:event, from_date: Date.yesterday - 1, to_date: Date.yesterday)
       event_4 = FactoryBot.create(:event, from_date: Date.yesterday)
       participant_1 = FactoryBot.create(:event_participant, event: event_1, user:)

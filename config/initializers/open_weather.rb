@@ -5,11 +5,11 @@ class OpenWeatherAPI
 
   def get_weather(city, state, country, from)
     place = get_coordinates(city, state, country)
-    resp = JSON.parse(RestClient.get("https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=#{place[:lat]}&lon=#{place[:lon]}&dt=#{from.to_time.to_i}&units=metric&appid=#{@api_key}"))
+    resp = JSON.parse(RestClient.get("https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=#{place[:lat]}&lon=#{place[:lon]}&dt=#{from.to_i}&units=metric&appid=#{@api_key}"))
     {
       main: resp['data'][0]['weather'][0]['main'],
       description: resp['data'][0]['weather'][0]['description'],
-      temperature: resp['data']['temp']
+      temperature: resp['data'][0]['temp']
     }
   end
 
