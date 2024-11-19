@@ -3,6 +3,7 @@ require 'rails_helper'
 RSpec.describe EventParticipant, type: :model do
   let!(:event) { FactoryBot.create(:event) }
   let!(:user) { FactoryBot.create(:user) }
+  let!(:generic_stub) { stub_request(:post, "https://api.sendgrid.com/v3/mail/send") }
   it 'can be created and associated with an event and user' do
     expect(EventParticipant.count).to eq 0
     expect do

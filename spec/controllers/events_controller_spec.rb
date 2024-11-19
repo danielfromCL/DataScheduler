@@ -5,6 +5,7 @@ RSpec.describe EventsController, type: :controller do
   let!(:owner) { FactoryBot.create(:user, role: 'owner', company:) }
   let!(:member) { FactoryBot.create(:user, company:) }
   let!(:user) { FactoryBot.create(:user) }
+  let!(:generic_stub) { stub_request(:post, "https://api.sendgrid.com/v3/mail/send") }
   describe "GET" do
     it "lists own events in chronological order" do
       event_1 = FactoryBot.create(:event, from_date: Date.yesterday)
@@ -257,7 +258,6 @@ RSpec.describe EventsController, type: :controller do
     end
 
     context 'with mailing' do
-      let!(:generic_stub) { stub_request(:post, "https://api.sendgrid.com/v3/mail/send") }
       let!(:member_email_stub_1) {
         stub_request(:post, "https://api.sendgrid.com/v3/mail/send")
           .with(body: "{\"from\":{\"email\":\"datascheduler@dscope.com\",\"name\":\"DataScheduler\"},\"subject\":\"New event scheduled\",\"personalizations\":[{\"to\":[{\"email\":\"#{member.email}\",\"name\":\"#{member.name}\"}]}],\"content\":[{\"type\":\"text/html\",\"value\":\"An event has been scheduled.\\n        Date: 18 Nov 15:00-18 Nov 16:00\\nLocation: Santiago - CL\"}]}")
