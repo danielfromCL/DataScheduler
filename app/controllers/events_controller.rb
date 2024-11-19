@@ -1,8 +1,14 @@
 class EventsController < ApplicationController
   before_action :validate_participant, only: :create
+
+  def show
+    @event = get_user.events.find(params[:id])
+    render json: @event, include: { event_participants: { only: [:id, :user_id, :status, :role], methods: [:schedule_conflicts] } }, methods: [:weather], status: :ok
+  end
+
   def index
     @events = get_user.events_ordered_by_from_date
-    render json: @events, include: { event_participants: { only: [:id, :user_id, :status, :role], methods: [:schedule_conflicts] } }, status: :ok
+    render json: @events, include: { event_participants: { only: [:id, :user_id, :status, :role], methods: [:schedule_conflicts] } }, methods: [:weather], status: :ok
   end
 
   def create
