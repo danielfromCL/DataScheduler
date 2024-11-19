@@ -7,4 +7,8 @@ class User < ApplicationRecord
     member: 'member',
     owner: 'owner'
   }
+
+  def events_ordered_by_from_date
+    events.order('events.from_date ASC')
+  end
 end

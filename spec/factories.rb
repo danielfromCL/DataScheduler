@@ -16,4 +16,9 @@ FactoryBot.define do
     from_date { Faker::Time.between_dates(from: Date.today - 2, to: Date.today) }
     to_date { DateTime.now }
   end
+
+  factory :event_participant do
+    status { 'pending' }
+    role { 'participant' }
+  end
 end
