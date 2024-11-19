@@ -1,8 +1,51 @@
 require 'rails_helper'
 
-RSpec.describe EventsController do
+RSpec.describe EventsController, type: :controller do
   describe "GET" do
-    it "" do
+    let!(:company) { FactoryBot.create(:company) }
+    let!(:owner) { FactoryBot.create(:user, role: 'owner', company:) }
+    let!(:member) { FactoryBot.create(:user, company:) }
+    let!(:user) { FactoryBot.create(:user) }
+
+    it "lists own events in chronological order" do
+      event_1 = FactoryBot.create(:event, from_date: Date.yesterday)
+      event_2 = FactoryBot.create(:event, from_date: Date.today)
+      event_3 = FactoryBot.create(:event, from_date: Date.yesterday - 1, to_date: Date.yesterday)
+      event_4 = FactoryBot.create(:event, from_date: Date.yesterday)
+      participant_1 = FactoryBot.create(:event_participant, event: event_1, user:)
+      participant_2 = FactoryBot.create(:event_participant, event: event_2, user:)
+      participant_3 = FactoryBot.create(:event_participant, event: event_3, user:)
+      participant_4 = FactoryBot.create(:event_participant, event: event_4, user: owner)
+      request.headers['Authorization'] = "Token #{user.id}"
+      get :index,
+          params: {
+            user_id: user.id
+          }
+      expect(response).to have_http_status(:ok)
+      resp = JSON.parse(response.body)
+      expect(resp.length).to eq(3)
+      expect(resp[0]['id']).to eq(event_3.id)
+      expect(resp[1]['id']).to eq(event_1.id)
+      expect(resp[2]['id']).to eq(event_2.id)
+    end
+
+    it 'lists own events if no user_id provided' do
+      event_1 = FactoryBot.create(:event, from_date: Date.yesterday)
+      event_2 = FactoryBot.create(:event, from_date: Date.today)
+      event_3 = FactoryBot.create(:event, from_date: Date.yesterday - 1, to_date: Date.yesterday)
+      event_4 = FactoryBot.create(:event, from_date: Date.yesterday)
+      participant_1 = FactoryBot.create(:event_participant, event: event_1, user:)
+      participant_2 = FactoryBot.create(:event_participant, event: event_2, user:)
+      participant_3 = FactoryBot.create(:event_participant, event: event_3, user:)
+      participant_4 = FactoryBot.create(:event_participant, event: event_4, user: owner)
+      request.headers['Authorization'] = "Token #{user.id}"
+      get :index
+      expect(response).to have_http_status(:ok)
+      resp = JSON.parse(response.body)
+      expect(resp.length).to eq(3)
+      expect(resp[0]['id']).to eq(event_3.id)
+      expect(resp[1]['id']).to eq(event_1.id)
+      expect(resp[2]['id']).to eq(event_2.id)
     end
   end
   describe 'POST' do
