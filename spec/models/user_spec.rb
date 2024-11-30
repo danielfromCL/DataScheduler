@@ -1,6 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe User, type: :model do
+  let!(:generic_stub) { stub_request(:post, "https://api.sendgrid.com/v3/mail/send") }
   it 'can create a user' do
     expect(User.count).to eq 0
     expect do
