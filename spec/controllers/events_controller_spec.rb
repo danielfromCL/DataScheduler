@@ -1,12 +1,11 @@
 require 'rails_helper'
 
 RSpec.describe EventsController, type: :controller do
+  let!(:company) { FactoryBot.create(:company) }
+  let!(:owner) { FactoryBot.create(:user, role: 'owner', company:) }
+  let!(:member) { FactoryBot.create(:user, company:) }
+  let!(:user) { FactoryBot.create(:user) }
   describe "GET" do
-    let!(:company) { FactoryBot.create(:company) }
-    let!(:owner) { FactoryBot.create(:user, role: 'owner', company:) }
-    let!(:member) { FactoryBot.create(:user, company:) }
-    let!(:user) { FactoryBot.create(:user) }
-
     it "lists own events in chronological order" do
       event_1 = FactoryBot.create(:event, from_date: Date.yesterday)
       event_2 = FactoryBot.create(:event, from_date: Date.today, online: false, city: 'Santiago', country: 'CL')
@@ -16,7 +15,7 @@ RSpec.describe EventsController, type: :controller do
       participant_2 = FactoryBot.create(:event_participant, event: event_2, user:)
       participant_3 = FactoryBot.create(:event_participant, event: event_3, user:)
       participant_4 = FactoryBot.create(:event_participant, event: event_4, user: owner)
-      request.headers['Authorization'] = "Token #{user.id}"
+      request.headers['Authorization'] = authenticate(user)
       get :index,
           params: {
             user_id: user.id
@@ -53,7 +52,7 @@ RSpec.describe EventsController, type: :controller do
       participant_2 = FactoryBot.create(:event_participant, event: event_2, user:)
       participant_3 = FactoryBot.create(:event_participant, event: event_3, user:)
       participant_4 = FactoryBot.create(:event_participant, event: event_4, user: owner)
-      request.headers['Authorization'] = "Token #{user.id}"
+      request.headers['Authorization'] = authenticate(user)
       get :index
       expect(response).to have_http_status(:ok)
       resp = JSON.parse(response.body)
@@ -88,7 +87,68 @@ RSpec.describe EventsController, type: :controller do
     end
   end
   describe 'POST' do
+    it 'owner can create events for members' do
+      request.headers['Authorization'] = authenticate(owner)
+      post :create,
+           params: {
+             user_id: member.id,
+             online: false,
+             country: 'CL',
+             city: 'Santiago',
+             from_date: '2024-11-18T12:00:00-03',
+             to_date: '2024-11-18T13:00:00-03'
+           },
+           as: :json
+      expect(response).to have_http_status(:created)
+      event = Event.find(JSON.parse(response.body)['id'])
+      expect(event.country).to eq('CL')
+      expect(event.city).to eq('Santiago')
+      expect(event.from_date).to eq(DateTime.parse('2024-11-18T12:00:00-03'))
+      expect(event.to_date).to eq(DateTime.parse('2024-11-18T13:00:00-03'))
+      expect(event.online).to be_falsey
+      expect(event.users.count).to eq(2)
+      expect(event.users).to eq(User.where(id: [member.id, owner.id]))
+      expect(owner.participations.count).to eq(1)
+      expect(owner.participations.first.role).to eq('creator')
+      expect(owner.participations.first.status).to eq('pending')
+      expect(member.participations.count).to eq(1)
+      expect(member.participations.first.role).to eq('participant')
+      expect(member.participations.first.status).to eq('pending')
+    end
 
+    it 'can\'t create events if not owner' do
+      request.headers['Authorization'] = authenticate(member)
+      post :create,
+           params: {
+             user_id: owner.id,
+             online: false,
+             country: 'CL',
+             city: 'Santiago',
+             from_date: '2024-11-18T12:00:00-03',
+             to_date: '2024-11-18T13:00:00-03'
+           },
+           as: :json
+      expect(response).to have_http_status(:forbidden)
+      expect(owner.participations.count).to eq(0)
+      expect(member.participations.count).to eq(0)
+    end
+
+    it 'cant\'t create events for people outside company' do
+      request.headers['Authorization'] = authenticate(owner)
+      post :create,
+           params: {
+             user_id: user.id,
+             online: false,
+             country: 'CL',
+             city: 'Santiago',
+             from_date: '2024-11-18T12:00:00-03',
+             to_date: '2024-11-18T13:00:00-03'
+           },
+           as: :json
+      expect(response).to have_http_status(:forbidden)
+      expect(owner.participations.count).to eq(0)
+      expect(user.participations.count).to eq(0)
+    end
   end
   describe 'PATCH' do
 
