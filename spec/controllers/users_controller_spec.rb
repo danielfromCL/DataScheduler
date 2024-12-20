@@ -28,14 +28,36 @@ RSpec.describe UsersController do
           }
       expect(response).to have_http_status(:forbidden)
     end
-  end
-  describe 'POST' do
 
-  end
-  describe 'PATCH' do
+    it 'shows a user itself' do
+      request.headers['authorization'] = authenticate(member_1)
+      get :show,
+          params: {
+            id: member_1.id
+          }
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body).to eq(member_1.as_json)
+    end
 
-  end
-  describe 'DELETE' do
+    it 'shows a member if owner' do
+      request.headers['authorization'] = authenticate(owner)
+      get :show,
+          params: {
+            id: member_1.id
+          }
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body).to eq(member_1.as_json)
+    end
 
+    it 'does not show user if not from company' do
+      request.headers['authorization'] = authenticate(outsider)
+      get :show,
+          params: {
+            id: member_1.id
+          }
+      expect(response).to have_http_status(:forbidden)
+    end
   end
 end
