@@ -6,10 +6,19 @@ RSpec.describe EventsController, type: :controller do
   let!(:member) { FactoryBot.create(:user, company:) }
   let!(:user) { FactoryBot.create(:user) }
   let!(:generic_stub) { stub_request(:post, "https://api.sendgrid.com/v3/mail/send") }
+  let!(:from_date) { Date.today }
+  let!(:location_stub) {
+    stub_request(:get, "http://api.openweathermap.org/geo/1.0/direct?q=Santiago,CL&limit=1&appid=")
+      .to_return(status: 200, body: { name: 'Santiago', lat: '12.123', lon: '13.321', country: 'CL' }.to_json, headers: {})
+  }
+  let!(:weather_stub) {
+    stub_request(:get, /https:\/\/api.openweathermap.org\/data\/3.0\/onecall\/timemachine\?appid=&dt=\d*&lat=12.123&lon=13.321&units=metric/)
+      .to_return(status: 200, body: { data: [{ temp: '23', weather: [{ main: 'Clear', description: 'Clear sky' }] }] }.to_json, headers: {})
+  }
   describe "GET" do
     it "lists own events in chronological order" do
       event_1 = FactoryBot.create(:event, from_date: Date.yesterday)
-      event_2 = FactoryBot.create(:event, from_date: Date.today, online: false, city: 'Santiago', country: 'CL')
+      event_2 = FactoryBot.create(:event, from_date:, online: false, city: 'Santiago', country: 'CL')
       event_3 = FactoryBot.create(:event, from_date: Date.yesterday - 1, to_date: Date.yesterday)
       event_4 = FactoryBot.create(:event, from_date: Date.yesterday)
       participant_1 = FactoryBot.create(:event_participant, event: event_1, user:)
@@ -42,6 +51,15 @@ RSpec.describe EventsController, type: :controller do
       expect(resp[0]['country']).to be_nil
       expect(resp[1]['country']).to be_nil
       expect(resp[2]['country']).to eq('CL')
+      expect(resp[0]['weather']).to be_nil
+      expect(resp[1]['weather']).to be_nil
+      expect(resp[2]['weather']).to eq({
+                                         'main' => 'Clear',
+                                         'description' => 'Clear sky',
+                                         'temperature' => '23'
+                                       })
+      expect(location_stub).to have_been_requested
+      expect(weather_stub).to have_been_requested
     end
 
     it 'lists own events if no user_id provided' do
@@ -129,6 +147,31 @@ RSpec.describe EventsController, type: :controller do
       expect(body[0]['event_participants'].map { |ep| ep['id']} ).to match_array([participant_3.id, participant_5.id])
       expect(body[1]['event_participants'][0]['id']).to eq(participant_1.id)
       expect(body[2]['event_participants'][0]['id']).to eq(participant_2.id)
+    end
+
+    it 'shows one event' do
+      event = FactoryBot.create(:event, from_date:, online: false, city: 'Santiago', country: 'CL')
+      participant = FactoryBot.create(:event_participant, event:, user:)
+      request.headers['Authorization'] = authenticate(user)
+      get :show,
+          params: {
+            id: event.id
+          }
+      expect(response).to have_http_status(:ok)
+      resp = JSON.parse(response.body)
+      expect(resp['id']).to eq(event.id)
+      expect(DateTime.parse(resp['from_date'])).to eq(event.from_date)
+      expect(resp['online']).to eq(false)
+      expect(resp['city']).to eq('Santiago')
+      expect(resp['state']).to be_nil
+      expect(resp['country']).to eq('CL')
+      expect(resp['weather']).to eq({
+                                         'main' => 'Clear',
+                                         'description' => 'Clear sky',
+                                         'temperature' => '23'
+                                       })
+      expect(location_stub).to have_been_requested
+      expect(weather_stub).to have_been_requested
     end
 
     it 'shows scheduling conflicts' do
