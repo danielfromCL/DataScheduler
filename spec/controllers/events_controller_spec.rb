@@ -5,6 +5,7 @@ RSpec.describe EventsController, type: :controller do
   let!(:owner) { FactoryBot.create(:user, role: 'owner', company:) }
   let!(:member) { FactoryBot.create(:user, company:) }
   let!(:user) { FactoryBot.create(:user) }
+  let!(:generic_stub) { stub_request(:post, "https://api.sendgrid.com/v3/mail/send") }
   describe "GET" do
     it "lists own events in chronological order" do
       event_1 = FactoryBot.create(:event, from_date: Date.yesterday)
@@ -255,11 +256,76 @@ RSpec.describe EventsController, type: :controller do
       expect(body['event_participants'][0]['schedule_conflicts']).to eq([event_2.as_json])
       expect(body['event_participants'][1]['schedule_conflicts']).to match_array([event_1.as_json, event_2.as_json])
     end
-  end
-  describe 'PATCH' do
 
-  end
-  describe 'DELETE' do
+    context 'with mailing' do
+      let!(:member_email_stub_1) {
+        stub_request(:post, "https://api.sendgrid.com/v3/mail/send")
+          .with(body: "{\"from\":{\"email\":\"datascheduler@dscope.com\",\"name\":\"DataScheduler\"},\"subject\":\"New event scheduled\",\"personalizations\":[{\"to\":[{\"email\":\"#{member.email}\",\"name\":\"#{member.name}\"}]}],\"content\":[{\"type\":\"text/html\",\"value\":\"An event has been scheduled.\\n        Date: 18 Nov 15:00-18 Nov 16:00\\nLocation: Santiago - CL\"}]}")
+          .to_return(status: 200, body: "", headers: {})
+      }
+      let!(:owner_email_stub_1) {
+        stub_request(:post, "https://api.sendgrid.com/v3/mail/send")
+          .with(body: "{\"from\":{\"email\":\"datascheduler@dscope.com\",\"name\":\"DataScheduler\"},\"subject\":\"New event scheduled\",\"personalizations\":[{\"to\":[{\"email\":\"#{owner.email}\",\"name\":\"#{owner.name}\"}]}],\"content\":[{\"type\":\"text/html\",\"value\":\"An event has been scheduled.\\n        Date: 18 Nov 15:00-18 Nov 16:00\\nLocation: Santiago - CL\"}]}")
+          .to_return(status: 200, body: "", headers: {})
+      }
+      let!(:member_email_stub_2) {
+        stub_request(:post, "https://api.sendgrid.com/v3/mail/send")
+          .with(body: "{\"from\":{\"email\":\"datascheduler@dscope.com\",\"name\":\"DataScheduler\"},\"subject\":\"New event scheduled\",\"personalizations\":[{\"to\":[{\"email\":\"#{member.email}\",\"name\":\"#{member.name}\"}]}],\"content\":[{\"type\":\"text/html\",\"value\":\"An event has been scheduled.\\n        Date: 18 Nov 15:00-18 Nov 16:00\\nMeeting link: zoom.com\"}]}")
+          .to_return(status: 200, body: "", headers: {})
+      }
+      let!(:owner_email_stub_2) {
+        stub_request(:post, "https://api.sendgrid.com/v3/mail/send")
+          .with(body: "{\"from\":{\"email\":\"datascheduler@dscope.com\",\"name\":\"DataScheduler\"},\"subject\":\"New event scheduled\",\"personalizations\":[{\"to\":[{\"email\":\"#{owner.email}\",\"name\":\"#{owner.name}\"}]}],\"content\":[{\"type\":\"text/html\",\"value\":\"An event has been scheduled.\\n        Date: 18 Nov 15:00-18 Nov 16:00\\nMeeting link: zoom.com\"}]}")
+          .to_return(status: 200, body: "", headers: {})
+      }
 
+      it 'notifies users on event creation' do
+        request.headers['Authorization'] = authenticate(owner)
+        post :create,
+             params: {
+               user_id: member.id,
+               online: false,
+               country: 'CL',
+               city: 'Santiago',
+               from_date: '2024-11-18T12:00:00-03',
+               to_date: '2024-11-18T13:00:00-03'
+             },
+             as: :json
+        expect(response).to have_http_status(:created)
+        expect(member_email_stub_1).to have_been_requested
+        expect(owner_email_stub_1).to have_been_requested
+      end
+
+      it 'notifies users with url if event online' do
+        request.headers['Authorization'] = authenticate(owner)
+        post :create,
+             params: {
+               user_id: member.id,
+               online: true,
+               url: 'zoom.com',
+               from_date: '2024-11-18T12:00:00-03',
+               to_date: '2024-11-18T13:00:00-03'
+             },
+             as: :json
+        expect(response).to have_http_status(:created)
+        expect(member_email_stub_2).to have_been_requested
+        expect(owner_email_stub_2).to have_been_requested
+      end
+
+      it 'does not notify unless created' do
+        request.headers['Authorization'] = authenticate(owner)
+        post :create,
+             params: {
+               user_id: user.id,
+               online: true,
+               url: 'zoom.com',
+               from_date: '2024-11-18T12:00:00-03',
+               to_date: '2024-11-18T13:00:00-03'
+             },
+             as: :json
+        expect(response).to have_http_status(:forbidden)
+        expect(generic_stub).not_to have_been_requested
+      end
+    end
   end
 end
