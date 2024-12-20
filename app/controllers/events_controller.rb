@@ -2,7 +2,7 @@ class EventsController < ApplicationController
   before_action :validate_participant, only: :create
   def index
     @events = get_user.events_ordered_by_from_date
-    render json: @events, status: :ok
+    render json: @events, include: { event_participants: { only: [:id, :user_id, :status, :role], methods: [:schedule_conflicts] } }, status: :ok
   end
 
   def create
@@ -10,7 +10,7 @@ class EventsController < ApplicationController
     user = get_user
     EventParticipant.create!(user: @user, event: @event, role: 'creator')
     EventParticipant.create!(user:, event: @event) if user != @user
-    render json: @event, status: :created
+    render json: @event, include: { event_participants: { only: [:id, :user_id, :status, :role], methods: [:schedule_conflicts] } },  status: :created
   end
 
   private
